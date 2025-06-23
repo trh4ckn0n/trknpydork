@@ -4,8 +4,10 @@ import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Form
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 import httpx
 import openai
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 openai.api_key = os.getenv("OPENAI_API_KEY")  # Assure-toi que la clé est dans l'env
 
