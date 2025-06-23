@@ -8,8 +8,7 @@ from fastapi.staticfiles import StaticFiles
 import httpx
 import openai
 
-# Récupère ta clé OpenAI depuis l'environnement
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = os.getenv("OPENAI_API_KEY")  # Assure-toi que la clé est bien définie
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -23,7 +22,7 @@ async def fetch_url(client, url):
         return None, None
 
 async def scan_dork(client, dork):
-    # Simulation d'une recherche google avec un dork (ici url fictive)
+    # Simule une recherche dork sur un moteur fictif
     url = f"https://example.com/search?q={dork.replace(' ', '+')}"
     status, length = await fetch_url(client, url)
     return {
