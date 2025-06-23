@@ -2,67 +2,99 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<title>DorkHunter Ultra</title>
+<title>DorkHunter Ultra - Python + OpenAI</title>
 <style>
-  body { background: #121212; color: #eee; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 1rem; }
-  textarea, button { width: 100%; margin-top: 1rem; padding: 0.8rem; font-size: 1.1rem; border-radius: 5px; border: none; }
-  textarea { resize: vertical; min-height: 120px; background: #222; color: #eee; }
-  button { background: #6200ee; color: white; cursor: pointer; }
-  table { width: 100%; margin-top: 2rem; border-collapse: collapse; }
-  th, td { padding: 0.8rem; border-bottom: 1px solid #444; text-align: left; }
-  th { background-color: #1f1f1f; }
-  tr:hover { background-color: #333; }
-  a { color: #61dafb; text-decoration: none; }
+  body { background: #0d1117; color: #c9d1d9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 1rem; }
+  textarea, input, button { font-size: 1.1rem; border-radius: 5px; border: none; margin-top: 0.5rem; padding: 0.8rem; }
+  textarea, input { width: 100%; background: #161b22; color: #c9d1d9; }
+  button { background: #238636; color: white; cursor: pointer; }
+  button:disabled { background: #444; cursor: not-allowed; }
+  table { width: 100%; margin-top: 1rem; border-collapse: collapse; }
+  th, td { border-bottom: 1px solid #30363d; padding: 0.5rem 1rem; }
+  th { background: #161b22; }
+  tr:hover { background: #21262d; }
+  a { color: #58a6ff; text-decoration: none; }
+  #generatedDorks { white-space: pre-wrap; background: #161b22; padding: 1rem; border-radius: 5px; max-height: 200px; overflow-y: auto; margin-top: 1rem;}
 </style>
 </head>
 <body>
-<h1>DorkHunter Ultra Interactive</h1>
 
-<textarea id="dorks" placeholder="Saisis tes dorks, un par ligne..."></textarea>
-<button onclick="startScan()">Lancer le scan</button>
+<h1>DorkHunter Ultra - Python + OpenAI</h1>
 
-<table id="results" style="display:none;">
-  <thead><tr><th>Dork</th><th>URL</th><th>Risque</th><th>Pays</th></tr></thead>
+<label for="prompt">Demande à OpenAI de générer des dorks :</label>
+<input type="text" id="prompt" placeholder="Ex: Dorks pour trouver des fichiers de configuration exposés" />
+
+<button id="generateBtn">Générer des dorks</button>
+
+<div id="generatedDorks" style="display:none;"></div>
+
+<hr/>
+
+<label for="dorksInput">Saisis tes dorks (un par ligne) :</label>
+<textarea id="dorksInput" rows="6" placeholder="ex: intitle:'index of' config"></textarea>
+
+<button id="startScanBtn">Lancer le scan</button>
+
+<table id="resultsTable" style="display:none;">
+  <thead><tr><th>Dork</th><th>URL</th><th>Status</th><th>Longueur</th><th>Risque</th><th>Pays</th></tr></thead>
   <tbody></tbody>
 </table>
 
 <script>
-  let ws;
+const generateBtn = document.getElementById('generateBtn');
+const promptInput = document.getElementById('prompt');
+const generatedDorksDiv = document.getElementById('generatedDorks');
 
-  function startScan() {
-    const dorksText = document.getElementById('dorks').value.trim();
-    if (!dorksText) {
-      alert("Merci d'entrer au moins un dork");
-      return;
-    }
-    const dorks = dorksText.split('\n').filter(Boolean);
-    const resultsTable = document.getElementById('results');
-    const tbody = resultsTable.querySelector('tbody');
-    tbody.innerHTML = '';
-    resultsTable.style.display = 'table';
+generateBtn.onclick = () => {
+  const prompt = promptInput.value.trim();
+  if (!prompt) return alert("Entre une demande pour générer les dorks");
+  generatedDorksDiv.style.display = 'block';
+  generatedDorksDiv.textContent = "Génération en cours...";
 
-    ws = new WebSocket(`ws://${window.location.host}/ws/scan`);
-    ws.onopen = () => {
-      ws.send(JSON.stringify({dorks}));
-    };
-    ws.onmessage = event => {
-      const res = JSON.parse(event.data);
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${res.dork}</td>
-        <td><a href="${res.url}" target="_blank">${res.url}</a></td>
-        <td>${res.risk}</td>
-        <td>${res.country}</td>
-      `;
-      tbody.appendChild(tr);
-    };
-    ws.onerror = err => {
-      alert("Erreur WebSocket : " + err.message);
-    };
-    ws.onclose = () => {
-      console.log("WebSocket closed");
-    };
-  }
+  const ws = new WebSocket(`ws://${window.location.host}/ws/generate_dorks`);
+  ws.onopen = () => ws.send(prompt);
+  ws.onmessage = (event) => {
+    const dorks = JSON.parse(event.data);
+    generatedDorksDiv.textContent = dorks.join("\n");
+    document.getElementById('dorksInput').value = dorks.join("\n");
+    ws.close();
+  };
+  ws.onerror = () => {
+    generatedDorksDiv.textContent = "Erreur lors de la génération.";
+  };
+};
+
+const startScanBtn = document.getElementById('startScanBtn');
+const dorksInput = document.getElementById('dorksInput');
+const resultsTable = document.getElementById('resultsTable');
+const tbody = resultsTable.querySelector('tbody');
+
+startScanBtn.onclick = () => {
+  const dorksText = dorksInput.value.trim();
+  if (!dorksText) return alert("Entre au moins un dork");
+  const dorks = dorksText.split("\n").filter(Boolean);
+  tbody.innerHTML = '';
+  resultsTable.style.display = "table";
+
+  const ws = new WebSocket(`ws://${window.location.host}/ws/scan`);
+  ws.onopen = () => ws.send(JSON.stringify({dorks}));
+  ws.onmessage = event => {
+    const res = JSON.parse(event.data);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${res.dork}</td>
+      <td><a href="${res.url}" target="_blank">${res.url}</a></td>
+      <td>${res.status}</td>
+      <td>${res.content_length}</td>
+      <td>${res.risk}</td>
+      <td>${res.country}</td>
+    `;
+    tbody.appendChild(tr);
+  };
+  ws.onerror = () => alert("Erreur WebSocket lors du scan");
+  ws.onclose = () => console.log("Scan terminé");
+};
 </script>
+
 </body>
 </html>
