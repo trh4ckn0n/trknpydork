@@ -23,7 +23,7 @@ async def fetch_url(client, url):
 
 async def scan_dork(client, dork):
     # Simule une recherche dork sur un moteur fictif
-    url = f"https://example.com/search?q={dork.replace(' ', '+')}"
+    url = f"https://google.com/search?q={dork.replace(' ', '+')}"
     status, length = await fetch_url(client, url)
     return {
         "dork": dork,
@@ -36,7 +36,7 @@ async def scan_dork(client, dork):
 
 async def generate_dorks_openai(prompt):
     response = await openai.ChatCompletion.acreate(
-        model="gpt-4o-mini",
+        model="gpt-4",
         messages=[
             {"role": "system", "content": "Tu es un expert en sécurité informatique, crée une liste de dorks efficaces et variés."},
             {"role": "user", "content": prompt}
