@@ -78,7 +78,7 @@ startScanBtn.onclick = () => {
 
   const ws = new WebSocket(`ws://${window.location.host}/ws/scan`);
   ws.onopen = () => ws.send(JSON.stringify({dorks}));
-  wsws.onmessage = event => {
+  ws.onmessage = event => {
   const res = JSON.parse(event.data);
 
   if (Array.isArray(res.results)) {
