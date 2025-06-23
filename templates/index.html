@@ -78,10 +78,9 @@ startScanBtn.onclick = () => {
 
   const ws = new WebSocket(`ws://${window.location.host}/ws/scan`);
   ws.onopen = () => ws.send(JSON.stringify({dorks}));
-  ws.onmessage = event => {
+  wsws.onmessage = event => {
   const res = JSON.parse(event.data);
 
-  // Si on a une liste de résultats
   if (Array.isArray(res.results)) {
     res.results.forEach(url => {
       const tr = document.createElement('tr');
@@ -96,7 +95,6 @@ startScanBtn.onclick = () => {
       tbody.appendChild(tr);
     });
   } else {
-    // fallback si pas de tableau "results", ancien format
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${res.dork}</td>
@@ -108,9 +106,10 @@ startScanBtn.onclick = () => {
     `;
     tbody.appendChild(tr);
   }
-  ws.onerror = () => alert("Erreur WebSocket lors du scan");
-  ws.onclose = () => console.log("Scan terminé");
 };
+
+ws.onerror = () => alert("Erreur WebSocket lors du scan");
+ws.onclose = () => console.log("Scan terminé");
 </script>
 
 </body>
