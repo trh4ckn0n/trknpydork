@@ -7,13 +7,13 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 import httpx
 import openai
-app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 openai.api_key = os.getenv("OPENAI_API_KEY")  # Assure-toi que la clé est dans l'env
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
-
+app.mount("/static", StaticFiles(directory="static"), name="static")
 async def fetch_url(client, url):
     try:
         r = await client.get(url, timeout=5)
