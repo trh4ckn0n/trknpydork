@@ -79,18 +79,35 @@ startScanBtn.onclick = () => {
   const ws = new WebSocket(`ws://${window.location.host}/ws/scan`);
   ws.onopen = () => ws.send(JSON.stringify({dorks}));
   ws.onmessage = event => {
-    const res = JSON.parse(event.data);
+  const res = JSON.parse(event.data);
+
+  // Si on a une liste de résultats
+  if (Array.isArray(res.results)) {
+    res.results.forEach(url => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${res.dork}</td>
+        <td><a href="${url}" target="_blank">${url}</a></td>
+        <td>${res.status}</td>
+        <td>${res.content_length || '-'}</td>
+        <td>${res.risk || '-'}</td>
+        <td>${res.country || '-'}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } else {
+    // fallback si pas de tableau "results", ancien format
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${res.dork}</td>
       <td><a href="${res.url}" target="_blank">${res.url}</a></td>
       <td>${res.status}</td>
-      <td>${res.content_length}</td>
-      <td>${res.risk}</td>
-      <td>${res.country}</td>
+      <td>${res.content_length || '-'}</td>
+      <td>${res.risk || '-'}</td>
+      <td>${res.country || '-'}</td>
     `;
     tbody.appendChild(tr);
-  };
+  }
   ws.onerror = () => alert("Erreur WebSocket lors du scan");
   ws.onclose = () => console.log("Scan terminé");
 };
