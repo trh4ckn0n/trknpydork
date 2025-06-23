@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>DorkHunter Ultra</title>
+<style>
+  body { background: #121212; color: #eee; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 1rem; }
+  textarea, button { width: 100%; margin-top: 1rem; padding: 0.8rem; font-size: 1.1rem; border-radius: 5px; border: none; }
+  textarea { resize: vertical; min-height: 120px; background: #222; color: #eee; }
+  button { background: #6200ee; color: white; cursor: pointer; }
+  table { width: 100%; margin-top: 2rem; border-collapse: collapse; }
+  th, td { padding: 0.8rem; border-bottom: 1px solid #444; text-align: left; }
+  th { background-color: #1f1f1f; }
+  tr:hover { background-color: #333; }
+  a { color: #61dafb; text-decoration: none; }
+</style>
+</head>
+<body>
+<h1>DorkHunter Ultra Interactive</h1>
+
+<textarea id="dorks" placeholder="Saisis tes dorks, un par ligne..."></textarea>
+<button onclick="startScan()">Lancer le scan</button>
+
+<table id="results" style="display:none;">
+  <thead><tr><th>Dork</th><th>URL</th><th>Risque</th><th>Pays</th></tr></thead>
+  <tbody></tbody>
+</table>
+
+<script>
+  let ws;
+
+  function startScan() {
+    const dorksText = document.getElementById('dorks').value.trim();
+    if (!dorksText) {
+      alert("Merci d'entrer au moins un dork");
+      return;
+    }
+    const dorks = dorksText.split('\n').filter(Boolean);
+    const resultsTable = document.getElementById('results');
+    const tbody = resultsTable.querySelector('tbody');
+    tbody.innerHTML = '';
+    resultsTable.style.display = 'table';
+
+    ws = new WebSocket(`ws://${window.location.host}/ws/scan`);
+    ws.onopen = () => {
+      ws.send(JSON.stringify({dorks}));
+    };
+    ws.onmessage = event => {
+      const res = JSON.parse(event.data);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${res.dork}</td>
+        <td><a href="${res.url}" target="_blank">${res.url}</a></td>
+        <td>${res.risk}</td>
+        <td>${res.country}</td>
+      `;
+      tbody.appendChild(tr);
+    };
+    ws.onerror = err => {
+      alert("Erreur WebSocket : " + err.message);
+    };
+    ws.onclose = () => {
+      console.log("WebSocket closed");
+    };
+  }
+</script>
+</body>
+</html>
