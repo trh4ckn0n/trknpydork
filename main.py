@@ -1,19 +1,20 @@
 import os
 import json
 import asyncio
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Form
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 import httpx
 import openai
 
-
-openai.api_key = os.getenv("OPENAI_API_KEY")  # Assure-toi que la clé est dans l'env
+# Récupère ta clé OpenAI depuis l'environnement
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
 async def fetch_url(client, url):
     try:
         r = await client.get(url, timeout=5)
@@ -22,7 +23,7 @@ async def fetch_url(client, url):
         return None, None
 
 async def scan_dork(client, dork):
-    # Ici on simule une recherche google dork (en pratique faut une API custom)
+    # Simulation d'une recherche google avec un dork (ici url fictive)
     url = f"https://example.com/search?q={dork.replace(' ', '+')}"
     status, length = await fetch_url(client, url)
     return {
@@ -46,7 +47,6 @@ async def generate_dorks_openai(prompt):
         n=1
     )
     text = response.choices[0].message.content
-    # On suppose une liste en lignes, on filtre un peu
     dorks = [line.strip("-* \n\t") for line in text.split("\n") if line.strip()]
     return dorks
 
